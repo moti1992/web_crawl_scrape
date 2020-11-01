@@ -1,8 +1,11 @@
 package logic
 
 import (
+	"bufio"
 	"io"
 	"log"
+	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -11,6 +14,7 @@ import (
 	"golang.org/x/net/html"
 )
 
+// CrawlAndScrape ... crawl the web links till given depth, scrape the text and return the array of strings
 func CrawlAndScrape(websiteURL, allowedDomains string, maxDepth int) (allWords []string) {
 	log.Println("=============start=================")
 	start := time.Now()
@@ -89,7 +93,8 @@ func CrawlAndScrape(websiteURL, allowedDomains string, maxDepth int) (allWords [
 				if d == "" {
 					break
 				}
-				if strings.HasPrefix(d, ".") || strings.HasPrefix(d, "@") || strings.HasPrefix(d, "#") || strings.HasPrefix(d, "var ") || strings.HasPrefix(d, "(function()") || strings.HasPrefix(d, "function ") || strings.HasPrefix(d, "img.") || strings.HasPrefix(d, "if(") || strings.HasPrefix(d, "if (") || strings.HasPrefix(d, "window.") || strings.HasPrefix(d, "{\"") {
+
+				if filteredByPrefix(d) || filteredBySubStr(d) {
 					break
 				}
 
@@ -106,4 +111,31 @@ func CrawlAndScrape(websiteURL, allowedDomains string, maxDepth int) (allWords [
 	log.Println("Time taken for crawl and scrape the text::", time.Since(start))
 	log.Println("=============end=================")
 	return
+}
+
+// WordCount ... count the words map with word and its count for a given file
+func WordCount(filename string) (map[string]int, error) {
+	var wordRegExp = regexp.MustCompile(`\pL+('\pL+)*`)
+	var wordCounts = make(map[string]int)
+
+	f, err := os.Open(filename)
+	if err != nil {
+		log.Println(err)
+		return wordCounts, err
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		if err := scanner.Err(); err != nil {
+			log.Println(err)
+			return wordCounts, err
+		}
+		line := strings.ToLower(scanner.Text())
+		words := wordRegExp.FindAllString(line, -1)
+		for _, word := range words {
+			wordCounts[word]++
+		}
+	}
+	return wordCounts, err
 }
