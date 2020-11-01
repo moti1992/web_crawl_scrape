@@ -99,7 +99,7 @@ func CrawlAndScrape(websiteURL, allowedDomains string, maxDepth int) (allWords [
 				}
 
 				// after the pre processing of data, push to allwords slice
-				log.Println(d)
+				// log.Println(d)
 				allWords = append(allWords, d)
 			}
 		}
